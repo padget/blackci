@@ -1,0 +1,10 @@
+---
+project:
+  name: blackci
+  author: padget
+  description: blackci is a simple ci on terminal 
+  package: 
+    - python3
+    - git
+  repo: 
+    - https://github.com/padget/blackci
