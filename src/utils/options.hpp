@@ -7,6 +7,8 @@
 
 namespace black
 {
+  namespace po = boost::program_options;
+
   struct option
   {
     std::string name;
@@ -17,10 +19,19 @@ namespace black
 
   class options
   {
-    boost::program_options::options_description opts;
+    po::options_description opts;
+    int argc;
+    char **argv;
+    po::variables_map vm;
 
   public:
-    explicit options(const std::string &name) : opts{name} {}
+    explicit options(
+        const std::string &name,
+        int _argc,
+        char **_argv)
+        : opts{name},
+          argc{_argc},
+          argv{_argv} {}
 
     template <typename type_t = void>
     void add(const std::string &name,
@@ -38,13 +49,45 @@ namespace black
              const std::string &description,
              bool required)
     {
+      auto pname = name.data();
+      auto pdesc = description.data();
+      auto value = po::value<type_t>();
+
+      // TODO surveiller si besoins
+      // d'une réaffectation ou non
       if (required)
-        opts.add_options()(name.data(), boost::program_options::value<type_t>().required(), description.data());
-      else
-        opts.add_options()(name.data(), boost::program_options::value<type_t>(), description.data());
+        value->required();
+
+      opts.add_options()(pname, value, pdesc);
     }
 
-    inline const boost::program_options::options_description &get() const
+    inline void parse()
+    {
+      po::store(po::parse_command_line(argc, argv, opts), vm);
+      po::notify(vm);
+    }
+
+    inline int count(
+      const std::string &key)
+    {
+      return vm.count(key);
+    }
+
+    inline bool exists(
+      const std::string &key)
+    {
+      return count(key) == 1;
+    }
+
+    template <typename type_t>
+    const type_t &get(
+      const std::string &key) const
+    {
+      return vm[key].as<type_t>();
+    }
+
+    inline const po::options_description &
+    description() const
     {
       return opts;
     }

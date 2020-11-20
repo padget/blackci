@@ -86,24 +86,22 @@ bool configure_project(
 
 int main(int argc, char **argv)
 {
-  black::options opts("black");
+  black::options opts("black", argc, argv);
   opts.add("help,h", "Help screen");
   opts.add<std::string>("job,j", "job name to execute");
   opts.add<std::string>("project,p", "project to scan to find the job");
 
-  po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, opts.get()), vm);
-  po::notify(vm);
+  opts.parse();
 
-  if (vm.count("help") == 1)
+  if (opts.exists("help"))
   {
-    std::cout << opts.get() << '\n';
+    std::cout << opts.description() << '\n';
   }
 
-  if (vm.count("project") == 1 and vm.count("job") == 1)
+  if (opts.exists("project") and opts.exists("job"))
   {
-    std::string projyml = vm["project"].as<std::string>();
-    std::string jobyml = vm["job"].as<std::string>();
+    std::string projyml = opts.get<std::string>("project");
+    std::string jobyml = opts.get<std::string>("job");
 
     try
     {

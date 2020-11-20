@@ -69,6 +69,7 @@
     "variant": "cpp",
     "strstream": "cpp",
     "*.ipp": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "cfenv": "cpp"
   }
 }
