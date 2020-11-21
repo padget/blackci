@@ -88,33 +88,35 @@ int main(int argc, char **argv)
 {
   black::options opts("black", argc, argv);
   opts.add("help,h", "Help screen");
-  opts.add<std::string>("job,j", "job name to execute");
+  opts.add<std::string>("job,j", "job name to execute", true);
   opts.add<std::string>("project,p", "project to scan to find the job");
 
-  opts.parse();
-
-  if (opts.exists("help"))
+  try
   {
-    std::cout << opts.description() << '\n';
+    opts.parse();
+
+    if (opts.exists("help"))
+    {
+      std::cout << opts.description() << '\n';
+      return EXIT_SUCCESS;
+    }
+
+    auto projyml = opts.get_str("project");
+    auto jobyml = opts.get_str("job");
+    yaml::Node node = yaml::LoadFile(projyml.value());
+    
+    if (node["project"])
+    {
+      black::project p = node["project"].as<black::project>();
+      configure_project(p);
+    }
   }
-
-  if (opts.exists("project") and opts.exists("job"))
+  catch (std::bad_optional_access &bad)
   {
-    std::string projyml = opts.get<std::string>("project");
-    std::string jobyml = opts.get<std::string>("job");
-
-    try
-    {
-      yaml::Node node = yaml::LoadFile(projyml);
-      if (node["project"])
-      {
-        black::project p = node["project"].as<black::project>();
-        configure_project(p);
-      }
-    }
-    catch (const std::exception &e)
-    {
-      cons::red(e.what());
-    }
+    cons::red(bad.what());
+  }
+  catch (const std::exception &e)
+  {
+    cons::red(e.what());
   }
 }

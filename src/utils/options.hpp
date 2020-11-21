@@ -3,6 +3,7 @@
 
 #include <string>
 #include <string_view>
+#include <optional>
 #include <boost/program_options.hpp>
 
 namespace black
@@ -68,22 +69,37 @@ namespace black
     }
 
     inline int count(
-      const std::string &key)
+        const std::string &key)
     {
       return vm.count(key);
     }
 
     inline bool exists(
-      const std::string &key)
+        const std::string &key)
     {
       return count(key) == 1;
     }
 
+    
+
     template <typename type_t>
-    const type_t &get(
-      const std::string &key) const
+    std::optional<type_t> get(
+        const std::string &key)
     {
       return vm[key].as<type_t>();
+    }
+
+    inline auto get_str(
+        const std::string &key)
+    {
+      return get<std::string>(key);
+    }
+
+    inline auto get_ull(
+        const std::string &key)
+
+    {
+      return get<unsigned long long>(key);
     }
 
     inline const po::options_description &
