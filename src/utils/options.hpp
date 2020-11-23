@@ -35,8 +35,9 @@ namespace black
           argv{_argv} {}
 
     template <typename type_t = void>
-    void add(const std::string &name,
-             const std::string &description)
+    void add(
+        const std::string &name,
+        const std::string &description)
     {
 
       if constexpr (std::is_same_v<type_t, void>)
@@ -46,9 +47,10 @@ namespace black
     }
 
     template <typename type_t>
-    void add(const std::string &name,
-             const std::string &description,
-             bool required)
+    void add(
+        const std::string &name,
+        const std::string &description,
+        bool required)
     {
       auto pname = name.data();
       auto pdesc = description.data();
@@ -60,6 +62,29 @@ namespace black
         value->required();
 
       opts.add_options()(pname, value, pdesc);
+    }
+
+    inline void add_str(
+        const std::string &key,
+        const std::string &description,
+        bool required = false)
+    {
+      return add<std::string>(key, description, required);
+    }
+
+    inline void add_ull(
+        const std::string &key,
+        const std::string &description,
+        bool required = false)
+    {
+      add<unsigned long long>(key, description, required);
+    }
+
+    inline void flag(
+        const std::string &key,
+        const std::string &description)
+    {
+      add(key, description);
     }
 
     inline void parse()
@@ -74,13 +99,11 @@ namespace black
       return vm.count(key);
     }
 
-    inline bool exists(
+    inline bool has(
         const std::string &key)
     {
       return count(key) == 1;
     }
-
-    
 
     template <typename type_t>
     std::optional<type_t> get(

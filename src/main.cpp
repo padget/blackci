@@ -1,5 +1,5 @@
 #include <yaml-cpp/yaml.h>
-#include <boost/program_options.hpp>
+
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -10,8 +10,8 @@
 #include "utils/format.hpp"
 #include "utils/process.hpp"
 #include "utils/options.hpp"
+#include "utils/yaml.hpp"
 
-namespace yaml = YAML;
 namespace cons = black::console;
 namespace po = boost::program_options;
 
@@ -35,13 +35,13 @@ namespace YAML
     static Node encode(
         const black::project &p)
     {
-      Node node;
-      node.push_back(p.name);
-      node.push_back(p.author);
-      node.push_back(p.description);
-      node.push_back(p.package);
-      node.push_back(p.repo);
-      return node;
+      Node n;
+      n.push_back(p.name);
+      n.push_back(p.author);
+      n.push_back(p.description);
+      n.push_back(p.package);
+      n.push_back(p.repo);
+      return n;
     }
 
     static bool decode(
@@ -50,17 +50,18 @@ namespace YAML
     {
       using strings = std::list<std::string>;
       using string = std::string;
+      namespace yaml = black::yaml;
 
-      if (n["name"])
-        p.name = n["name"].as<string>();
-      if (n["author"])
-        p.author = n["author"].as<string>();
-      if (n["description"])
-        p.description = n["description"].as<string>();
-      if (n["package"])
-        p.package = n["package"].as<strings>();
+      if (yaml::has(n, "name"))
+        p.name = yaml::as_str(n, "name");
+      if (yaml::has(n, "author"))
+        p.author = yaml::as_str(n, "author");
+      if (yaml::has(n, "description"))
+        p.description = yaml::as_str(n, "description");
+      if (yaml::has(n, "package"))
+        p.package = yaml::as_strs(n, "package");
       if (n["repo"])
-        p.repo = n["repo"].as<strings>();
+        p.repo = yaml::as_strs(n, "repo");
       return true;
     }
   };
@@ -86,16 +87,18 @@ bool configure_project(
 
 int main(int argc, char **argv)
 {
+  namespace yaml = black::yaml;
+
   black::options opts("black", argc, argv);
   opts.add("help,h", "Help screen");
-  opts.add<std::string>("job,j", "job name to execute", true);
-  opts.add<std::string>("project,p", "project to scan to find the job");
+  opts.add_str("job,j", "job name to execute", true);
+  opts.add_str("project,p", "project to scan to find the job");
 
   try
   {
     opts.parse();
 
-    if (opts.exists("help"))
+    if (opts.has("help"))
     {
       std::cout << opts.description() << '\n';
       return EXIT_SUCCESS;
@@ -103,11 +106,12 @@ int main(int argc, char **argv)
 
     auto projyml = opts.get_str("project");
     auto jobyml = opts.get_str("job");
-    yaml::Node node = yaml::LoadFile(projyml.value());
     
-    if (node["project"])
+    YAML::Node node = YAML::LoadFile(projyml.value());
+    
+    if (yaml::has(node, "project"))
     {
-      black::project p = node["project"].as<black::project>();
+      black::project p = yaml::as<black::project>(node, "project");
       configure_project(p);
     }
   }
