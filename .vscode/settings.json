@@ -70,6 +70,7 @@
     "strstream": "cpp",
     "*.ipp": "cpp",
     "valarray": "cpp",
-    "cfenv": "cpp"
+    "cfenv": "cpp",
+    "slist": "cpp"
   }
 }

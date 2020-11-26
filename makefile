@@ -1,5 +1,5 @@
 COMPILER=g++-10
-LIBS=-lyaml-cpp -lboost_system -lboost_thread -lpthread -lboost_filesystem -lboost_program_options
+LIBS=-lyaml-cpp -lboost_system -lboost_thread -lpthread -lboost_filesystem -lboost_program_options -lfmt
 FLAGS=-std=c++17
 
 all: git_proxy apt_proxy build

@@ -6,13 +6,11 @@
 #include <sstream>
 #include <list>
 
-#include "utils/console.hpp"
-#include "utils/format.hpp"
+#include "utils/frontend.hpp"
 #include "utils/process.hpp"
 #include "utils/options.hpp"
 #include "utils/yaml.hpp"
 
-namespace cons = black::console;
 namespace po = boost::program_options;
 
 namespace black
@@ -71,14 +69,19 @@ bool configure_project(
     black::project const &p)
 {
   using namespace black;
+  using namespace black::front;
 
   bool global_res = true;
   std::string proxy = "apt_proxy";
 
+  std::cout << project_title(p.name);
+  std::cout << "configuration du projet en cours...\n";
   for (auto &&package : p.package)
   {
-    int res = black::run_attached(
-        proxy, format("package=%1%", package));
+    std::cout << project_package(p.name, package);
+    std::cout << "vvérification package présent " << package << "\n";
+    int res = run_attached(
+        proxy, fmt::format("package={}", package));
     global_res = global_res && res == 0;
   }
 
@@ -100,15 +103,16 @@ int main(int argc, char **argv)
 
     if (opts.has("help"))
     {
+      std::cout << "help page" << std::endl;
       std::cout << opts.description() << '\n';
       return EXIT_SUCCESS;
     }
 
     auto projyml = opts.get_str("project");
     auto jobyml = opts.get_str("job");
-    
+
     YAML::Node node = YAML::LoadFile(projyml.value());
-    
+
     if (yaml::has(node, "project"))
     {
       black::project p = yaml::as<black::project>(node, "project");
@@ -117,10 +121,10 @@ int main(int argc, char **argv)
   }
   catch (std::bad_optional_access &bad)
   {
-    cons::red(bad.what());
   }
   catch (const std::exception &e)
   {
-    cons::red(e.what());
   }
+
+  return EXIT_SUCCESS;
 }

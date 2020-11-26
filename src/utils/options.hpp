@@ -39,7 +39,6 @@ namespace black
         const std::string &name,
         const std::string &description)
     {
-
       if constexpr (std::is_same_v<type_t, void>)
         opts.add_options()(name.data(), description.data());
       else
@@ -56,8 +55,6 @@ namespace black
       auto pdesc = description.data();
       auto value = po::value<type_t>();
 
-      // TODO surveiller si besoins
-      // d'une réaffectation ou non
       if (required)
         value->required();
 

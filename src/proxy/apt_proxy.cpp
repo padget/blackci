@@ -23,14 +23,14 @@ int main(int argc, char **argv)
 
       if (key == "package")
       {
-        cons::blue("--- installation of " + value);
+        // cons::blue("--- installation of " + value);
         std::string cmd = "sudo apt install " + value;
         int res = bp::system(cmd, bp::std_out > stdout, bp::std_err > stderr);
 
         if (res == 0)
-          cons::green("--- installation done");
+          ; // cons::green("--- installation done");
         else
-          cons::red("--- error during installation");
+          ; //cons::red("--- error during installation");
       }
     }
   }
