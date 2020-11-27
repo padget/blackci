@@ -78,6 +78,7 @@ namespace black
   std::string ask(std::string_view question)
   {
     std::string response;
+    std::cout << "??? ";
     std::cout << question << " : \n>>> ";
     std::getline(std::cin, response);
     return response;
@@ -100,30 +101,30 @@ namespace black
 
   std::string ask_name()
   {
-    std::string question = " -- name ?";
+    std::string question = "name ?";
     return ask_one(question);
   }
   std::string ask_description()
   {
-    std::string question = " -- description ?";
+    std::string question = "description ?";
     return ask_one(question);
   }
 
   std::string ask_author()
   {
-    std::string question = " -- author ?";
+    std::string question = "author ?";
     return ask_one(question);
   }
 
   std::list<std::string> ask_package()
   {
-    std::string question = " -- package ?";
+    std::string question = "package ?";
     return ask_multi(question);
   }
 
   std::list<std::string> ask_repo()
   {
-    std::string question = " -- repo ?";
+    std::string question = "repo ?";
     return ask_multi(question);
   }
 
