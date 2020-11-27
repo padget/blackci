@@ -6,7 +6,7 @@
 #include <sstream>
 #include <list>
 
-#include "utils/frontend.hpp"
+#include "utils/styles.hpp"
 #include "utils/process.hpp"
 #include "utils/options.hpp"
 #include "utils/yaml.hpp"
@@ -69,7 +69,7 @@ bool configure_project(
     black::project const &p)
 {
   using namespace black;
-  using namespace black::front;
+  using namespace black::styles;
 
   bool global_res = true;
   std::string proxy = "apt_proxy";
