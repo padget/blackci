@@ -75,11 +75,12 @@ bool configure_project(
   std::string proxy = "apt_proxy";
 
   std::cout << project_title(p.name);
-  std::cout << "configuration du projet en cours...\n";
+  std::cout << comment("configuration du projet en cours...");
+
   for (auto &&package : p.package)
   {
     std::cout << project_package(p.name, package);
-    std::cout << "vvérification package présent " << package << "\n";
+    std::cout << comment(std::string("vérification package présent ")+package);
     int res = run_attached(
         proxy, fmt::format("package={}", package));
     global_res = global_res && res == 0;

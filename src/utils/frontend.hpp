@@ -29,6 +29,16 @@ namespace black::front
     {
       return fmt::fg(fmt::color::deep_sky_blue);
     }
+
+    auto fg_black()
+    {
+      return fmt::fg(fmt::color::black);
+    }
+
+    auto fg_gray()
+    {
+      return fmt::fg(fmt::color::gray);
+    }
   } // namespace style
 
   auto project_title(const std::string &title)
@@ -51,6 +61,12 @@ namespace black::front
     ss << "[" << trtitle << "] ";
     auto sqtitle = ss.str();
     return fmt::format(style, "PACKAGE {:*<50}\n", sqtitle);
+  }
+
+  auto comment(const std::string& com)
+  {
+    auto style = style::bold() | style::fg_gray();
+    return fmt::format(style, "# {}\n", com);
   }
 } // namespace black::front
 
