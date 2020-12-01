@@ -2,7 +2,7 @@ COMPILER=g++-10
 LIBS=-lyaml-cpp -lboost_system -lboost_thread -lpthread -lboost_filesystem -lboost_program_options -lfmt
 FLAGS=-std=c++17
 
-all: dist git_proxy apt_proxy build
+all: dist git_proxy apt_proxy build black_project_init black_paint
 
 git_proxy: src/proxy/git_proxy.cpp dist
 	${COMPILER} -o dist/git_proxy src/proxy/git_proxy.cpp ${LIBS} ${FLAGS}
@@ -15,6 +15,9 @@ build: src/main.cpp dist
 
 black_project_init: src/actions/black_project_init.cpp dist
 	${COMPILER} -o dist/black_project_init src/actions/black_project_init.cpp ${LIBS} ${FLAGS}
+
+black_paint: src/filters/black_paint.cpp dist
+	${COMPILER} -o dist/black_paint src/filters/black_paint.cpp ${LIBS} ${FLAGS}
 
 dist:
 	mkdir dist

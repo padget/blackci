@@ -78,8 +78,7 @@ namespace black
   std::string ask(std::string_view question)
   {
     std::string response;
-    std::cout << "??? ";
-    std::cout << question << " : \n>>> ";
+    std::cout << "question" << question << " : \n";
     std::getline(std::cin, response);
     return response;
   }
@@ -104,6 +103,7 @@ namespace black
     std::string question = "name ?";
     return ask_one(question);
   }
+
   std::string ask_description()
   {
     std::string question = "description ?";
