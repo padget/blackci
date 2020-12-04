@@ -1,6 +1,10 @@
 ---
-- black_project_init:
-  - regex: '^quetion'
-    style: red
-  - regex: '^reponse'
-    style: gray
+- name: black_init_project
+  formats: 
+    - regex: '^quetion'
+      style: 
+        - red
+        - bold
+        - italic
+    - regex: '^reponse'
+      style: gray
