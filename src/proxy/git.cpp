@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 
   if (p.empty())
   {
-    cout << "git not found\n";
+    cerr << "git not found\n";
     return EXIT_FAILURE;
   }
 

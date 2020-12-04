@@ -7,6 +7,7 @@
 
 #include <yaml-cpp/yaml.h>
 #include <boost/algorithm/string/split.hpp>
+#include <fmt/format.h>
 
 // Le but de cette action est de proposer l'initialisation
 // en demandant à l'utilisateur un nom, la liste des packages
@@ -52,6 +53,9 @@ namespace black
 int main()
 {
   black::project pro;
+  std::cout << "##############################\n";
+  std::cout << "### Init new project #########\n";
+  std::cout << "##############################\n";
 
   pro.name = black::ask_name();
   pro.author = black::ask_author();
@@ -63,6 +67,7 @@ int main()
   {
     yaml::Node nd = black::convert(pro);
     bool res = black::save(nd);
+    std::cout << fmt::format("### Config file {}.yml created\n", pro.name);
     return EXIT_SUCCESS;
   }
   else
@@ -78,7 +83,7 @@ namespace black
   std::string ask(std::string_view question)
   {
     std::string response;
-    std::cout << "question" << question << " : \n";
+    std::cout << "???  " << question << " : \n";
     std::getline(std::cin, response);
     return response;
   }
@@ -94,37 +99,36 @@ namespace black
     constexpr auto is_space = [](auto c) { return c == ' '; };
     std::list<std::string> responses;
     boost::split(responses, response, is_space, boost::token_compress_on);
-
     return responses;
   }
 
   std::string ask_name()
   {
-    std::string question = "name ?";
+    std::string question = "name (name of the project configuration file)";
     return ask_one(question);
   }
 
   std::string ask_description()
   {
-    std::string question = "description ?";
+    std::string question = "description (short description of the project)";
     return ask_one(question);
   }
 
   std::string ask_author()
   {
-    std::string question = "author ?";
+    std::string question = "author (ex: Jhon Doe)";
     return ask_one(question);
   }
 
   std::list<std::string> ask_package()
   {
-    std::string question = "package ?";
+    std::string question = "package (separated by space list)";
     return ask_multi(question);
   }
 
   std::list<std::string> ask_repo()
   {
-    std::string question = "repo ?";
+    std::string question = "repo (separated by space list)";
     return ask_multi(question);
   }
 

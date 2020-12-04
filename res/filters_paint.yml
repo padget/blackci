@@ -1,0 +1,12 @@
+---
+- name: actions_project_init
+  formats: 
+    - regex: '^\?\?\?'
+      style: 
+        - white
+        - bold
+        - italic
+    - regex: '^\#\#\#'
+      style: 
+        - red
+        - bold

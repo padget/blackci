@@ -1,23 +1,38 @@
 COMPILER=g++-10
 LIBS=-lyaml-cpp -lboost_system -lboost_thread -lpthread -lboost_filesystem -lboost_program_options -lfmt
 FLAGS=-std=c++17
+EXT=
+.PHONY: all
 
-all: dist git_proxy apt_proxy build black_project_init black_paint
+all:\
+  dist/blackci \
+	dist/proxies_git \
+	dist/proxies_apt \
+	dist/actions_project \
+	dist/actions_project_init \
+	dist/filters_paint \
+	dist/filters_paint.yml
 
-git_proxy: src/proxy/git_proxy.cpp dist
-	${COMPILER} -o dist/git_proxy src/proxy/git_proxy.cpp ${LIBS} ${FLAGS}
+dist/blackci: src/blackci.cpp dist
+	${COMPILER} -o dist/blackci${EXT} src/blackci.cpp ${LIBS} ${FLAGS}
 
-apt_proxy: src/proxy/apt_proxy.cpp dist
-	${COMPILER} -o dist/apt_proxy src/proxy/apt_proxy.cpp ${LIBS} ${FLAGS}
+dist/actions_project: src/actions/project.cpp dist
+	${COMPILER} -o dist/actions_project${EXT} src/actions/project.cpp ${LIBS} ${FLAGS}
 
-build: src/main.cpp dist
-	${COMPILER} -o dist/main src/main.cpp ${LIBS} ${FLAGS}
+dist/actions_project_init: src/actions/project/init.cpp dist
+	${COMPILER} -o dist/actions_project_init${EXT} src/actions/project/init.cpp ${LIBS} ${FLAGS}
 
-black_project_init: src/actions/black_project_init.cpp dist
-	${COMPILER} -o dist/black_project_init src/actions/black_project_init.cpp ${LIBS} ${FLAGS}
+dist/filters_paint: src/filters/paint.cpp dist
+	${COMPILER} -o dist/filters_paint${EXT} src/filters/paint.cpp ${LIBS} ${FLAGS}
+	
+dist/proxies_git: src/proxy/git.cpp dist
+	${COMPILER} -o dist/proxies_git${EXT} src/proxy/git.cpp ${LIBS} ${FLAGS}
 
-black_paint: src/filters/black_paint.cpp dist
-	${COMPILER} -o dist/black_paint src/filters/black_paint.cpp ${LIBS} ${FLAGS}
+dist/proxies_apt: src/proxy/apt.cpp dist
+	${COMPILER} -o dist/proxies_apt${EXT} src/proxy/apt.cpp ${LIBS} ${FLAGS}
+	
+dist/filters_paint.yml: res/filters_paint.yml
+	cp res/filters_paint.yml dist/filters_paint.yml
 
 dist:
 	mkdir dist

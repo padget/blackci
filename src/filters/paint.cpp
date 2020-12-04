@@ -2,6 +2,7 @@
 #include <regex>
 #include <algorithm>
 #include <exception>
+#include <filesystem>
 
 #include <fmt/color.h>
 #include <yaml-cpp/yaml.h>
@@ -65,6 +66,7 @@ int main(int argc, char **argv)
 {
   try
   {
+
     auto path = get_config_path(argc, argv);
     auto fname = get_filter_name(argc, argv);
     auto config = load_configuration(path);
@@ -385,7 +387,7 @@ to_style(
       style |= fmt::fg(fmt::color::violet);
     else if (s == "wheat")
       style |= fmt::fg(fmt::color::wheat);
-    else if (s == "white ")
+    else if (s == "white")
       style |= fmt::fg(fmt::color::white);
     else if (s == "white_smoke")
       style |= fmt::fg(fmt::color::white_smoke);
