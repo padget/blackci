@@ -3,17 +3,20 @@
 #include <vector>
 
 #include <boost/process.hpp>
+#include "../utils/json.hpp"
 
 int main(int argc, char **argv)
 {
   namespace bp = boost::process;
+  namespace json = nlohmann;
 
   if (argc < 2)
   {
     std::cerr << "ERROR : missing arguments\n";
     return EXIT_FAILURE;
   }
-
+  
+  
   std::string subaction = argv[1];
   std::string exe;
   std::vector<std::string> args;

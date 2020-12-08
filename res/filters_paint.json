@@ -1,0 +1,25 @@
+[
+  {
+    "name": "actions_project_init",
+    "formats": [
+      {
+        "displays": [
+          {
+            "pattern": "- result : {}",
+            "path": "log.result.status"
+          },
+          {
+            "pattern": "- message : {}",
+            "path": "log.result.message"
+          }
+        ],
+        "path": "log.result.status",
+        "value": "no_change",
+        "style": [
+          "green",
+          "bold"
+        ]
+      }
+    ]
+  }
+]

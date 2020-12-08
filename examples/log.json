@@ -1,0 +1,51 @@
+[{
+  "log": {
+    "type": "info",
+    "msg": "démarrage application"
+  }
+},
+{
+  "log": {
+    "type": "debug",
+    "msg": "démarrage project"
+  }
+},
+{
+  "log": {
+    "type": "debug",
+    "msg": "plop"
+  }
+},
+{
+  "log": {
+    "type": "warn",
+    "msg": "plip"
+  }
+},
+{
+  "log": {
+    "type": "result",
+    "result": {
+      "status": "no_changed",
+      ""
+    }
+  }
+},
+{
+  "log": {
+    "type": "info",
+    "msg": "lqsdkjqlksdj"
+  }
+},
+{
+  "log": {
+    "type": "info",
+    "msg": "qldkjqslkdj"
+  }
+},
+{
+  "log": {
+    "type": "info",
+    "msg": "qlksd jmqls jdmklj "
+  }
+}]

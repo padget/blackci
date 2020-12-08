@@ -7,14 +7,27 @@
 
 #include <boost/process.hpp>
 
+#include "utils/json.hpp"
+
+nlohmann::json log(
+  std::string_view lvl, 
+  const std::string& msg)
+
+{
+  nlohmann::json j;
+  j["log"]["msg"] = msg;
+  j["log"]["lvl"] = lvl;
+  return j;
+}
+
 int main(int argc, char **argv)
 {
   namespace bp = boost::process;
+  namespace json = nlohmann;
 
-  if (argc < 1)
+  if (argc <= 1)
   {
-    std::cerr << "ERROR : bad argument line\n";
-    std::cerr << "black <action> <args>...\n";
+    std::cerr << log("info", u8R"(bad args line \n->black<action><args>...)");
     return EXIT_FAILURE;
   }
 
@@ -38,7 +51,7 @@ int main(int argc, char **argv)
     std::cerr << "possible value: project, job or admin\n";
     return EXIT_FAILURE;
   }
-
+  auto raw = R"(qlksdjqklsjdqlkdjk)";
   bp::child(bp::exe = exe,
             bp::args = args,
             bp::std_in = stdin,
