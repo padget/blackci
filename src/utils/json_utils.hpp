@@ -13,11 +13,50 @@ namespace black::json
     err["log"]["type"] = "exception";
     err["log"]["level"] = "fatal";
     err["log"]["message"] = exc.what();
-    auto &&pattern = "{}\n";
     return err;
   }
 
-  bool
+  inline nlohmann::json
+  log_info(
+      const std::string &mess)
+  {
+    nlohmann::json log;
+    log["log"]["type"] = "simple";
+    log["log"]["level"] = "info";
+    log["log"]["message"] = mess;
+    return log;
+  }
+
+  inline nlohmann::json
+  report(
+      const std::string &status)
+  {
+    nlohmann::json report;
+    report["log"]["type"] = "report";
+    report["log"]["report"]["status"] = status;
+    return report;
+  }
+
+  inline nlohmann::json
+  title(
+      const std::string &val,
+      const std::string &lvl)
+  {
+    nlohmann::json jt;
+    jt["title"]["level"] = lvl;
+    jt["title"]["value"] = val;
+    return jt;
+  }
+
+  inline nlohmann::json
+  question(const std::string &demand)
+  {
+    nlohmann::json jq;
+    jq["question"] = demand;
+    return jq;
+  }
+
+  inline bool
   exists(
       const std::string &path,
       const nlohmann::json &json)
@@ -56,7 +95,7 @@ namespace black::json
     if (exists(path, j))
     {
       nlohmann::json v = get(path, j);
-      
+
       if (v.is_string())
         return v.get<std::string>();
     }

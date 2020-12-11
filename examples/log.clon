@@ -1,0 +1,21 @@
+(log 
+  (level "fatal")
+  (message 2)
+  (report 
+    (status "oops")
+    (status ""))
+  (type "exception"))
+
+
+
+
+
+(log 2)
+(log "string")
+(log true)
+(log false)
+
+(log 
+  (repo "https://")
+  (repo "https://"))
+

@@ -1,5 +1,24 @@
 [
   {
+    "name": "exception",
+    "formats": [
+      {
+        "displays": [
+          {
+            "pattern": "- fatal : {}",
+            "path": "log.message"
+          }
+        ],
+        "path": "log.type",
+        "value": "exception",
+        "style": [
+          "red",
+          "bold"
+        ]
+      }
+    ]
+  },
+  {
     "name": "actions_project_init",
     "formats": [
       {
@@ -7,16 +26,38 @@
           {
             "pattern": "- result : {}",
             "path": "log.result.status"
-          },
-          {
-            "pattern": "- message : {}",
-            "path": "log.result.message"
           }
         ],
         "path": "log.result.status",
-        "value": "no_change",
+        "value": "change",
         "style": [
-          "green",
+          "yellow",
+          "bold"
+        ]
+      },
+      {
+        "displays": [
+          {
+            "pattern": "- ??? : {} : ",
+            "path": "question"
+          }
+        ],
+        "path": "question",
+        "style": [
+          "red",
+          "bold"
+        ]
+      },
+      {
+        "path": "title.value",
+        "displays": [
+          {
+            "pattern": "######################\n####  {}\n######################",
+            "path": "title.value"
+          }
+        ],
+        "style": [
+          "yellow",
           "bold"
         ]
       }

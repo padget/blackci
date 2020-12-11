@@ -74,6 +74,7 @@
     "slist": "cpp",
     "regex": "cpp",
     "shared_mutex": "cpp",
-    "forward_list": "cpp"
+    "forward_list": "cpp",
+    "any": "cpp"
   }
 }

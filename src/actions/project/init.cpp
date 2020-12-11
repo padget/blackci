@@ -8,6 +8,8 @@
 #include <yaml-cpp/yaml.h>
 #include <boost/algorithm/string/split.hpp>
 #include <fmt/format.h>
+#include "../../utils/json.hpp"
+#include "../../utils/json_utils.hpp"
 
 // Le but de cette action est de proposer l'initialisation
 // en demandant à l'utilisateur un nom, la liste des packages
@@ -17,18 +19,9 @@ namespace yaml = YAML;
 
 namespace black
 {
-  struct project
-  {
-    std::string name;
-    std::string description;
-    std::string author;
-    std::list<std::string> package;
-    std::list<std::string> repo;
-  };
-
-  std::string ask(std::string_view question);
-  std::string ask_one(std::string_view question);
-  std::list<std::string> ask_multi(std::string_view question);
+  std::string ask(const std::string& q);
+  std::string ask_one(const std::string& question);
+  std::list<std::string> ask_multi(const std::string& question);
 
   std::string ask_name();
   std::string ask_description();
@@ -36,64 +29,42 @@ namespace black
   std::list<std::string> ask_package();
   std::list<std::string> ask_repo();
 
-  bool check_project(const project &pro);
-
-  bool check_name(const std::string &name);
-  bool check_author(const std::string &author);
-  bool check_description(const std::string &description);
-  bool check_packages(const std::list<std::string> &packages);
-  bool check_package(const std::string &package);
-  bool check_repos(const std::list<std::string> &repos);
-  bool check_repo(const std::string &repo);
-
-  yaml::Node convert(const project &pro);
-  bool save(const yaml::Node &nd);
+  bool save(const nlohmann::json &nd);
 } // namespace black
 
 int main()
 {
-  black::project pro;
-  std::cout << "##############################\n";
-  std::cout << "### Init new project #########\n";
-  std::cout << "##############################\n";
+  std::cout << black::json::title("Init new project", "2");
+  nlohmann::json jproj;
+  jproj["project"]["name"] = black::ask_name();
+  jproj["project"]["author"] = black::ask_author();
+  jproj["project"]["description"] = black::ask_description();
+  jproj["project"]["packages"] = black::ask_package();
+  jproj["project"]["repos"] = black::ask_repo();
+  
+  bool res = black::save(jproj);
 
-  pro.name = black::ask_name();
-  pro.author = black::ask_author();
-  pro.description = black::ask_description();
-  pro.package = black::ask_package();
-  pro.repo = black::ask_repo();
-
-  if (black::check_project(pro))
-  {
-    yaml::Node nd = black::convert(pro);
-    bool res = black::save(nd);
-    std::cout << fmt::format("### Config file {}.yml created\n", pro.name);
-    return EXIT_SUCCESS;
-  }
-  else
-  {
-    return EXIT_FAILURE;
-  }
+  std::cout << black::json::report("changed");
 
   return EXIT_SUCCESS;
 }
 
 namespace black
 {
-  std::string ask(std::string_view question)
+  std::string ask(const std::string& question)
   {
     std::string response;
-    std::cout << "???  " << question << " : \n";
+    std::cout << black::json::question(question);
     std::getline(std::cin, response);
     return response;
   }
 
-  std::string ask_one(std::string_view question)
+  std::string ask_one(const std::string& question)
   {
     return ask(question);
   }
 
-  std::list<std::string> ask_multi(std::string_view question)
+  std::list<std::string> ask_multi(const std::string& question)
   {
     std::string response = ask(question);
     constexpr auto is_space = [](auto c) { return c == ' '; };
@@ -132,73 +103,11 @@ namespace black
     return ask_multi(question);
   }
 
-  bool check_project(const project &pro)
+  bool save(const nlohmann::json &jproj)
   {
-    return check_name(pro.name) and
-           check_author(pro.author) and
-           check_description(pro.description) and
-           check_packages(pro.package) and
-           check_repos(pro.repo);
-  }
-
-  bool check_name(const std::string &name)
-  {
-    return std::regex_match(name, std::regex("[a-zA-Z_0-9]*"));
-  }
-
-  bool check_author(const std::string &author)
-  {
-    return true;
-  }
-
-  bool check_description(const std::string &description)
-  {
-    return true;
-  }
-
-  bool check_packages(const std::list<std::string> &packages)
-  {
-    return std::all_of(
-        packages.begin(), packages.end(),
-        [](const std::string &p) { return check_package(p); });
-  }
-
-  bool check_package(const std::string &package)
-  {
-    return true;
-  }
-
-  bool check_repos(const std::list<std::string> &repos)
-  {
-    return std::all_of(
-        repos.begin(), repos.end(),
-        [](const std::string &r) { return check_repo(r); });
-  }
-
-  bool check_repo(const std::string &repo)
-  {
-    return true;
-  }
-
-  yaml::Node convert(const project &pro)
-  {
-    yaml::Node pn;
-    pn["name"] = pro.name;
-    pn["author"] = pro.author;
-    pn["description"] = pro.description;
-    pn["package"] = pro.package;
-    pn["repo"] = pro.repo;
-
-    yaml::Node n;
-    n["project"] = pn;
-    return n;
-  }
-
-  bool save(const yaml::Node &nd)
-  {
-    std::ofstream out(nd["project"]["name"].as<std::string>() + ".yml");
-    out << "---\n";
-    out << nd;
+    auto name = jproj["project"]["name"].get<std::string>();
+    std::ofstream out(name + ".json");
+    out << jproj;
     return true;
   }
 

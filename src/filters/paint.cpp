@@ -137,7 +137,10 @@ configuration load_config(const json::json &j)
     {
       format fmt;
       fmt.path = jfmt["path"].get<std::string>();
-      fmt.value = jfmt["value"].get<std::string>();
+
+      if (jfmt.contains("value"))
+        fmt.value = jfmt["value"].get<std::string>();
+
       fmt.style = to_style(jfmt["style"].get<std::vector<std::string>>());
 
       if (jfmt.contains("displays"))
@@ -253,9 +256,11 @@ void apply_filter(
     const filter &f)
 {
   using namespace black::json;
+  
   for (auto &&fmt : f.formats)
     if (exists(fmt.path, j))
-      if (get_str(fmt.path, j) == fmt.value)
+      if (fmt.value.empty() or
+          get_str(fmt.path, j) == fmt.value)
       {
         if (fmt.displays.empty())
           std::cout << fmt::format(fmt.style, "{}\n", j.dump());

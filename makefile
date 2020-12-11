@@ -1,17 +1,18 @@
 COMPILER=g++-10
 LIBS=-lyaml-cpp -lboost_system -lboost_thread -lpthread -lboost_filesystem -lboost_program_options -lfmt
-FLAGS=-std=c++17
+FLAGS=-std=c++17 -O3 -Wall
 EXT=
 .PHONY: all
 
 all:\
+	clean \
   dist/blackci \
 	dist/proxies_git \
 	dist/proxies_apt \
 	dist/actions_project \
 	dist/actions_project_init \
 	dist/filters_paint \
-	dist/filters_paint.yml
+	dist/filters_paint.json
 
 dist/blackci: src/blackci.cpp dist
 	${COMPILER} -o dist/blackci${EXT} src/blackci.cpp ${LIBS} ${FLAGS}
@@ -31,8 +32,12 @@ dist/proxies_git: src/proxy/git.cpp dist
 dist/proxies_apt: src/proxy/apt.cpp dist
 	${COMPILER} -o dist/proxies_apt${EXT} src/proxy/apt.cpp ${LIBS} ${FLAGS}
 	
-dist/filters_paint.yml: res/filters_paint.yml
-	cp res/filters_paint.yml dist/filters_paint.yml
+dist/filters_paint.json: res/filters_paint.json
+	cp res/filters_paint.json dist/filters_paint.json
+
+dist/clon: src/filters/clon.cpp dist
+	${COMPILER} -o dist/clon${EXT} src/filters/clon.cpp ${LIBS} ${FLAGS}
+	
 
 dist:
 	mkdir dist
