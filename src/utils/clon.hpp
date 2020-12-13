@@ -7,210 +7,142 @@
 #include <exception>
 #include <stdexcept>
 #include <iostream>
-#include <boost/algorithm/string.hpp>
 
 namespace black::clon
 {
   enum struct clon_type
   {
-    string,  // == std::string
-    boolean, // == bool
-    number,  // == double
-    object,  // == std::map<std::string, clon>
-    none     // == type non défini.
+    string,
+    boolean,
+    number,
+    object,
+    none
   };
 
   struct clon
   {
-    using map_ref = std::map<std::string, std::vector<clon>> &;
-    using lst_ref = std::vector<clon> &;
-    using str_ref = std::string &;
-    using dbl_ref = double &;
-    using bol_ref = bool &;
-
-    using map_cref = const std::map<std::string, std::vector<clon>> &;
-    using lst_cref = const std::vector<clon> &;
-    using str_cref = const std::string &;
-    using dbl_cref = const double &;
-    using bol_cref = const bool &;
-
-    std::any val;
     clon_type type = clon_type::none;
-
-    inline bool is_none() const
-    {
-      return type == clon_type::none;
-    }
-
-    inline bool is_defined() const
-    {
-      return not is_none();
-    }
-
-    inline bool is_number() const
-    {
-      return type == clon_type::number;
-    }
-
-    inline bool is_string() const
-    {
-      return type == clon_type::string;
-    }
-
-    inline bool is_object() const
-    {
-      return type == clon_type::object;
-    }
-
-    inline bool is_bool() const
-    {
-      return type == clon_type::boolean;
-    }
-
-    str_ref str()
-    {
-      return std::any_cast<str_ref>(val);
-    }
-
-    str_cref str() const
-    {
-      return std::any_cast<str_cref>(val);
-    }
-
-    dbl_ref dbl()
-    {
-      return std::any_cast<dbl_ref>(val);
-    }
-
-    dbl_cref dbl() const
-    {
-      return std::any_cast<dbl_cref>(val);
-    }
-
-    map_ref map()
-    {
-      return std::any_cast<map_ref>(val);
-    }
-
-    map_cref map() const
-    {
-      return std::any_cast<map_cref>(val);
-    }
-
-    bol_ref bol()
-    {
-      return std::any_cast<bol_ref>(val);
-    }
-
-    bol_cref bol() const
-    {
-      return std::any_cast<bol_cref>(val);
-    }
-
-    clon &operator[](
-        const std::string &name)
-    {
-      if (is_none())
-      {
-        val = std::map<std::string, std::vector<clon>>();
-        clon item;
-        map()[name].push_back(item);
-        type = clon_type::object;
-      }
-
-      if (is_object())
-      {
-        
-        return;
-      }
-
-      throw std::invalid_argument(
-          "'operator[]' can't "
-          "be used if clon is "
-          "not none or object");
-    }
-
-    const clon &operator[](
-        const std::string &name) const
-    {
-      if (is_object())
-        return map().at(name);
-
-      throw std::invalid_argument(
-          "'operator[]' can't "
-          "be used if clon is "
-          "not none or object");
-    }
-
-    clon &operator=(const std::string &s)
-    {
-      if (is_none() or is_string())
-      {
-        type = clon_type::string;
-        val = s;
-      }
-
-      return *this;
-    }
-
-    clon &operator=(const double &n)
-    {
-      if (is_none() or is_number())
-      {
-        type = clon_type::number;
-        val = n;
-      }
-
-      return *this;
-    }
-
-    clon &operator=(const clon &o)
-    {
-      if (this != &o)
-      {
-        val = o.val;
-        type = o.type;
-      }
-
-      return *this;
-    }
-
-    std::string to_string()
-    {
-      std::stringstream ss;
-      switch (type)
-      {
-      case clon_type::none:
-        break;
-      case clon_type::boolean:
-        ss << (bol() ? "true" : "false");
-        break;
-      case clon_type::number:
-        ss << dbl();
-        break;
-      case clon_type::string:
-        ss << "\"" << str() << "\"";
-        break;
-      case clon_type::object:
-        for (auto &&item : map())
-          if (not item.second.is_none())
-            ss << "(" << item.first << ' ' << item.second.to_string() << ")";
-        break;
-      }
-
-      return ss.str();
-    }
-
-    
-
-    bool contains(const std::string &name) const
-    {
-      if (is_object())
-        return not map().count(name) == 0;
-      else
-        return false;
-    }
+    std::string name;
+    std::any val;
   };
+
+  using clons = std::vector<clon>;
+  using lst_ref = std::vector<clon> &;
+  using str_ref = std::string &;
+  using dbl_ref = double &;
+  using bol_ref = bool &;
+
+  using lst_cref = const std::vector<clon> &;
+  using str_cref = const std::string &;
+  using dbl_cref = const double &;
+  using bol_cref = const bool &;
+
+  bol_cref cast_bool(const clon &c)
+  {
+    return std::any_cast<bol_cref>(c);
+  }
+
+  bol_ref cast_bool(clon &c)
+  {
+    return std::any_cast<bol_ref>(c);
+  }
+
+  str_cref cast_string(const clon &c)
+  {
+    return std::any_cast<str_cref>(c);
+  }
+
+  str_ref cast_string(clon &c)
+  {
+    return std::any_cast<str_ref>(c);
+  }
+
+  dbl_cref cast_number(const clon &c)
+  {
+    return std::any_cast<dbl_cref>(c);
+  }
+
+  dbl_ref cast_number(clon &c)
+  {
+    return std::any_cast<dbl_ref>(c);
+  }
+
+  lst_cref cast_object(const clon &c)
+  {
+    return std::any_cast<lst_cref>(c);
+  }
+
+  lst_ref cast_object(clon &c)
+  {
+    return std::any_cast<lst_ref>(c);
+  }
+
+  inline void to_string_basic(
+      std::stringstream &ss,
+      const clon &c);
+
+  inline void to_string_bool(
+      std::stringstream &ss,
+      const clon &c)
+  {
+    ss << cast_bool(c) ? "true" : "false";
+  }
+
+  inline void to_string_string(
+      std::stringstream &ss,
+      const clon &c)
+  {
+    ss << '"' << cast_string(c) << '"';
+  }
+
+  inline void to_string_number(
+      std::stringstream &ss,
+      const clon &c)
+  {
+    ss << cast_number(c);
+  }
+
+  inline void to_string_object(
+      std::stringstream &ss,
+      const clon &c)
+  {
+    for (auto &&item : cast_object(c))
+      to_string_basic(ss, item);
+  }
+  
+  inline void to_string_basic(
+      std::stringstream &ss,
+      const clon &c)
+  {
+    ss << "(" << c.name;
+
+    switch (c.type)
+    {
+    case clon_type::boolean:
+      to_string_bool(ss, c);
+      break;
+    case clon_type::number:
+      to_string_number(ss, c);
+      break;
+    case clon_type::string:
+      to_string_string(ss, c);
+      break;
+    case clon_type::object:
+      to_string_object(ss, c);
+      break;
+    case clon_type::none:
+      break;
+    }
+
+    ss << ")";
+  }
+
+  inline std::string to_string(const clon &c)
+  {
+    std::stringstream ss;
+    to_string_basic(ss, c);
+    return ss.str();
+  }
 
   // std::string::const_iterator remove_blank(
   //     std::string::const_iterator b,
@@ -377,13 +309,13 @@ namespace black::clon
   //         case clon_type::boolean:
   //           auto &&res = parse_bool(b, e);
   //           b = remove_blank(std::get<1>(res), e);
-            
+
   //           if (end_object(b, e))
   //           {
   //             b++;
 
   //             if (std::get<0>(res).is_bool())
-  //               return {std::get<0>(res), b, name};              
+  //               return {std::get<0>(res), b, name};
   //           }
 
   //           break;
