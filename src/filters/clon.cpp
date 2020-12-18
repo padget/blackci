@@ -1,28 +1,36 @@
-
 #include "../utils/clon.hpp"
 #include <iostream>
 
-int main()
+namespace std
 {
-  /**
-   * (log 
-   *    (type "exception") 
-   *    (level "fatal") n
-   *    (message "on est sous l'eau"))
-   *    (report 
-   *      (status "ok")))
-   */
-  black::clon::clon c;
-  c["log"]["type"] = "exception";
-  c["log"]["level"] = "fatal";
-  c["log"]["message"] = 2;
-  c["log"]["report"]["status"] = "oops";
-  black::clon::clon start;
-  start["toto"] = "null";
-  c["log"]["start"] = start;
-  c["log"]["start"] = start;
+  constexpr char newline = '\n';
+}
 
-  std::cout << c.to_string() << std::endl;
+int main()
+try 
+{
+  std::string s =
+    R"((log   
+        (coucou 
+          (status 
+            (prout "coucou") 
+            (lol "coucou")
+            (toto true)
+            (tata 12) 
+            (titi false)
+          )
+        )
+      ))";
 
+  black::clon::clon c = black::clon::parse(s.begin(), s.end());
+  
+  std::cout << black::clon::to_string(black::clon::get("coucou.status:0", c));
+  
   return EXIT_SUCCESS;
 }
+catch (const std::exception& e)
+{
+  std::cout << "error " << e.what() << std::endl;
+}
+
+
