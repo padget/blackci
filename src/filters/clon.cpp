@@ -3,12 +3,13 @@
 
 namespace std
 {
-  constexpr char newline = '\n';
+  constexpr char lf = '\n';
 }
 
 int main()
 try 
 {
+  using namespace black::clon;
   std::string s =
     R"((log   
         (coucou 
@@ -22,10 +23,12 @@ try
         )
       ))";
 
-  black::clon::clon c = black::clon::parse(s.begin(), s.end());
-  
-  std::cout << black::clon::to_string(black::clon::get("coucou.status:0", c));
-  
+  const clon& c = parse(s.begin(), s.end());
+  const clon& status = get("coucou.status.prout", c);
+  std::cout << (int)status.type << std::lf;
+  std::cout << to_string(status) << std::lf;
+  std::cout << cast_string(status) << std::lf;
+  std::cout << get_value<string>("coucou.status.prout", c) << std::lf;
   return EXIT_SUCCESS;
 }
 catch (const std::exception& e)
