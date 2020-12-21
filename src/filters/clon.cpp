@@ -7,7 +7,7 @@ namespace std
 }
 
 int main()
-try 
+try
 {
   using namespace black::clon;
   std::string s =
@@ -17,18 +17,21 @@ try
             (prout "coucou") 
             (lol "coucou")
             (toto true)
-            (tata 12) 
+            (toto 12) 
             (titi false)
           )
         )
       ))";
 
-  const clon& c = parse(s.begin(), s.end());
-  const clon& status = get("coucou.status.prout", c);
-  std::cout << (int)status.type << std::lf;
-  std::cout << to_string(status) << std::lf;
-  std::cout << cast_string(status) << std::lf;
-  std::cout << get_value<string>("coucou.status.prout", c) << std::lf;
+  clon c = parse(s.begin(), s.end());
+  
+  const string& st = get_string("coucou.status.prout", c);
+  std::cout << st << std::lf;
+  std::cout << get_number("coucou.status.toto:1", c) << std::lf;
+  set("coucou.status.toto:1", c, "coucou2");
+  std::cout << get_string("coucou.status.toto:1", c) << std::lf;
+  std::cout << "" << std::lf;
+  
   return EXIT_SUCCESS;
 }
 catch (const std::exception& e)

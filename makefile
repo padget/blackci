@@ -1,6 +1,6 @@
 COMPILER=g++-10
 LIBS=-lyaml-cpp -lboost_system -lboost_thread -lpthread -lboost_filesystem -lboost_program_options -lfmt
-FLAGS=-std=c++17 -O3 -Wall
+FLAGS=-std=c++20 -Wall
 EXT=
 .PHONY: all
 
