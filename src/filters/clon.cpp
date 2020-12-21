@@ -25,7 +25,10 @@ try
 
   clon c = parse(s.begin(), s.end());
   
-  const string& st = get_string("coucou.status.prout", c);
+  for (const detail::path& p : detail::to_paths("coucou.status.toto:2.quiqui:3"))
+      std::cout << p.p << ":" << p.idx << std::lf;
+  
+  const string& st = to_string(get("coucou.status.prout", c));
   std::cout << st << std::lf;
   std::cout << get_number("coucou.status.toto:1", c) << std::lf;
   set("coucou.status.toto:1", c, "coucou2");

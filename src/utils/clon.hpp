@@ -12,6 +12,10 @@
 #include <fmt/format.h>
 #include <boost/tokenizer.hpp>
 #include <type_traits>
+#include <boost/range/iterator_range.hpp>
+
+
+
 
 namespace black::clon
 {
@@ -213,7 +217,7 @@ namespace black::clon
   class expected_character : public std::invalid_argument
   {
   public:
-    expected_character(const std::string& chars)
+    expected_character(std::string_view chars)
       : std::invalid_argument(
         fmt::format("expected characters : {}", chars))
     {
@@ -223,7 +227,7 @@ namespace black::clon
   class malformed_path : public std::invalid_argument
   {
   public:
-    malformed_path(const std::string& reason)
+    malformed_path(std::string_view reason)
       : std::invalid_argument(
         fmt::format("malformed path : {}", reason))
     {
@@ -233,7 +237,7 @@ namespace black::clon
   class malformed_number : public malformed_path
   {
   public:
-    malformed_number(const std::string& path)
+    malformed_number(std::string_view path)
       : malformed_path(
         fmt::format("malformed number '{}'", path))
     {
@@ -243,7 +247,7 @@ namespace black::clon
   class malformed_name : public malformed_path
   {
   public:
-    malformed_name(const std::string& path)
+    malformed_name(std::string_view path)
       : malformed_path(
         fmt::format("malformed name '{}'", path))
     {
@@ -490,14 +494,14 @@ namespace black::clon
   {
     struct path
     {
-      std::string p;
+      std::string_view p;
       std::size_t idx = 0;
     };
 
     using paths = std::vector<path>;
 
     std::size_t count(
-      const std::string& str,
+      std::string_view str,
       const char c)
     {
       return std::count(str.begin(), str.end(), c);
@@ -508,7 +512,7 @@ namespace black::clon
       return '0' <= c and c <= '9';
     }
 
-    bool is_number(const std::string& s)
+    bool is_number(std::string_view s)
     {
       return !s.empty() and
         std::all_of(s.begin(), s.end(), is_digit);
@@ -519,19 +523,61 @@ namespace black::clon
       return between('a', c, 'z');
     }
 
-    bool is_name(const std::string& s)
+    bool is_name(std::string_view s)
     {
       return !s.empty() and
         std::all_of(s.begin(), s.end(), is_lower);
     }
 
-    path to_path(const std::string& spath)
+    struct tokenizer
     {
-      using sep = boost::char_separator<char>;
-      using tokenizer = boost::tokenizer<sep>;
+      std::string_view::const_iterator b;
+      std::string_view::const_iterator e;
+      const char sep;
+    };
 
-      auto toks = tokenizer(spath, sep(":"));
-      auto cnt = std::distance(toks.begin(), toks.end());
+    std::size_t count(const tokenizer& t)
+    {
+      return std::count(t.b, t.e, t.sep);
+    }
+
+    std::string_view next_token(tokenizer& t)
+    {
+      auto b = t.b;
+
+      while (t.b != t.e)
+        if (*(t.b) == t.sep)
+        {
+          std::advance(t.b, 1);
+          break;
+        }
+        else
+          std::advance(t.b, 1);
+
+      if (t.b == t.e)
+        return std::string_view(b, t.b);
+      else
+        return std::string_view(b, t.b - 1);
+    }
+
+    std::size_t to_size(std::string_view v)
+    {
+      std::size_t size = v.size();
+      
+      switch (size)
+      {
+      case 0: throw std::exception();
+      case 1:
+        return (v.back() - '0');
+      default:
+        return (v.back() - '0') + 10 * to_size({ v.begin(), v.end() - 1 });
+      }
+    }
+
+    path to_path(std::string_view spath)
+    {
+      auto toks = tokenizer(spath.begin(), spath.end(), ':');
+      auto cnt = count(toks);
 
       if (cnt > 2)
         throw malformed_path(
@@ -546,40 +592,36 @@ namespace black::clon
       }
       else
       {
-        auto tok = toks.begin();
-        auto end = toks.end();
+        auto pth = next_token(toks);
 
-        if (tok == end)
+        if (pth.size() == 0)
           throw malformed_path("empty path");
-
-        auto pth = *tok;
 
         if (not is_name(pth))
           throw malformed_name(pth);
 
-        tok++;
+        auto nb = next_token(toks);
         std::size_t idx = 0;
 
-        if (tok != end)
+        if (nb.size() != 0)
         {
-          if (not is_number(*tok))
-            throw malformed_number(*tok);
+          if (not is_number(nb))
+            throw malformed_number(nb);
           else
-            idx = std::stoull(*tok);
+            idx = to_size(nb);
         }
 
         return { pth, idx };
       }
     }
 
-    paths to_paths(const std::string& spath)
+    paths to_paths(std::string_view spath)
     {
-      using sep = boost::char_separator<char>;
-      using tokenizer = boost::tokenizer<sep>;
-
       paths pths;
+      tokenizer toks(spath.begin(), spath.end(), '.');
+      std::string_view tok;
 
-      for (auto&& tok : tokenizer(spath, sep(".")))
+      while ((tok = next_token(toks)).size() > 0)
         pths.push_back(to_path(tok));
 
       return pths;
@@ -614,7 +656,7 @@ namespace black::clon
       if (b != e and not is_none(c))
       {
         const clon& sub = get(*b, c);
-        b++;
+        std::advance(b, 1);
         return get(b, e, sub);
       }
       else if (b == e and is_none(c))
@@ -627,7 +669,7 @@ namespace black::clon
   }// namespace detail
 
   const clon& get(
-    const std::string& path,
+    std::string_view path,
     const clon& c)
   {
     detail::paths&& pths =
@@ -637,7 +679,7 @@ namespace black::clon
   }
 
   const string& get_string(
-    const std::string& pth,
+    std::string_view pth,
     const clon& c)
   {
     return as_string(get(pth, c));
