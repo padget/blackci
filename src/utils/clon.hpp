@@ -2,20 +2,13 @@
 #define __black_clon_hpp__
 
 #include <vector>
-#include <any>
 #include <variant>
 #include <string>
 #include <sstream>
 #include <exception>
 #include <stdexcept>
-#include <iostream>
 #include <fmt/format.h>
-#include <boost/tokenizer.hpp>
-#include <type_traits>
-#include <boost/range/iterator_range.hpp>
-
-
-
+#include <istream>
 
 namespace black::clon
 {
@@ -110,17 +103,8 @@ namespace black::clon
     return std::get<1>(c.val);
   }
 
-  bol_ref as_bool(clon& c)
-  {
-    return std::get<1>(c.val);
-  }
 
   str_cref as_string(const clon& c)
-  {
-    return std::get<string>(c.val);
-  }
-
-  str_ref as_string(clon& c)
   {
     return std::get<string>(c.val);
   }
@@ -130,20 +114,12 @@ namespace black::clon
     return std::get<2>(c.val);
   }
 
-  dbl_ref as_number(clon& c)
-  {
-    return std::get<2>(c.val);
-  }
 
   lst_cref as_object(const clon& c)
   {
     return std::get<4>(c.val);
   }
 
-  lst_ref as_object(clon& c)
-  {
-    return std::get<4>(c.val);
-  }
   namespace detail
   {
     inline void to_string_basic(
@@ -214,51 +190,72 @@ namespace black::clon
     return ss.str();
   }
 
-  class expected_character : public std::invalid_argument
+  class expected_character
+    : public std::invalid_argument
   {
   public:
-    expected_character(std::string_view chars)
+    expected_character(
+      std::string_view chars)
       : std::invalid_argument(
-        fmt::format("expected characters : {}", chars))
-    {
-    }
+        fmt::format(
+          "expected characters : {}", chars))
+    {}
   };
 
-  class malformed_path : public std::invalid_argument
+  class malformed_path
+    : public std::invalid_argument
   {
   public:
-    malformed_path(std::string_view reason)
+    malformed_path(
+      std::string_view reason)
       : std::invalid_argument(
-        fmt::format("malformed path : {}", reason))
-    {
-    }
+        fmt::format(
+          "malformed path : {}", reason))
+    {}
   };
 
-  class malformed_number : public malformed_path
+  class malformed_number
+    : public malformed_path
   {
   public:
-    malformed_number(std::string_view path)
+    malformed_number(
+      std::string_view path)
       : malformed_path(
-        fmt::format("malformed number '{}'", path))
-    {
-    }
+        fmt::format(
+          "malformed number '{}'", path))
+    {}
   };
 
-  class malformed_name : public malformed_path
+  class malformed_name
+    : public malformed_path
   {
   public:
-    malformed_name(std::string_view path)
+    malformed_name(
+      std::string_view path)
       : malformed_path(
-        fmt::format("malformed name '{}'", path))
-    {
-    }
+        fmt::format(
+          "malformed name '{}'", path))
+    {}
+  };
+
+  class unreachable_path :
+    public std::invalid_argument
+  {
+  public:
+    unreachable_path(
+      std::string_view pth)
+      : std::invalid_argument(
+        fmt::format(
+          "unreachable path : {}", pth))
+    {}
   };
 
   namespace detail
   {
+    template<typename char_iterator>
     clon_type next_could_be(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+      char_iterator b,
+      char_iterator e)
     {
       if (b != e)
       {
@@ -273,39 +270,42 @@ namespace black::clon
         else if ('0' <= *b and *b <= '9')
           return clon_type::number;
       }
+
       return clon_type::none;
     }
 
-    std::string::const_iterator remove_blank(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+    template<typename char_iterator>
+    char_iterator remove_blank(
+      char_iterator b,
+      char_iterator e)
     {
       while (b != e and (*b == '\n' or
         *b == ' ' or
         *b == '\t' or
         *b == '\r'))
-        b++;
+        std::advance(b, 1);
 
       return b;
     }
 
+    template<typename char_iterator>
     std::string object_name(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+      char_iterator b,
+      char_iterator e)
     {
       auto sb = b;
 
       while ('a' <= *b and *b <= 'z')
-        b++;
+        std::advance(b, 1);
 
       return std::string(sb, b);
     }
 
-    template<typename type_t>
+    template<typename type_t, typename iterator>
     struct parse_result
     {
       type_t val;
-      std::string::const_iterator i;
+      iterator i;
     };
 
     bool between(
@@ -316,56 +316,61 @@ namespace black::clon
       return min <= c and c <= max;
     }
 
-    std::string::const_iterator parse_until(
-      std::string::const_iterator b,
-      std::string::const_iterator e,
+    template<typename char_iterator>
+    char_iterator parse_until(
+      char_iterator b,
+      char_iterator e,
       const char c)
     {
       while (b != e and *b != c)
-        b++;
+        std::advance(b, 1);
 
       if (b == e)
-        throw expected_character("'\"'");
+        throw expected_character(
+          fmt::format("'{}'", c));
 
       return b;
     }
 
-    std::string::const_iterator parse_blank(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+    template<typename char_iterator>
+    char_iterator parse_blank(
+      char_iterator b,
+      char_iterator e)
     {
       while (b != e and (*b == ' ' or
         *b == '\t' or
         *b == '\n' or
         *b == '\r'))
-        b++;
+        std::advance(b, 1);
       return b;
     }
 
-    parse_result<string> parse_string(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+    template<typename char_iterator>
+    parse_result<string, char_iterator> parse_string(
+      char_iterator b,
+      char_iterator e)
     {
       if (b != e and *b == '"')
       {
         auto sb = b;
-        b = parse_until(b + 1, e, '"');
-        return { std::string(sb + 1, b), b + 1 };
+        b = parse_until(std::next(b), e, '"');
+        return { std::string(std::next(sb), b), std::next(b) };
       }
 
       throw expected_character("'\"'");
     }
 
-    parse_result<number> parse_number(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+    template<typename char_iterator>
+    parse_result<number, char_iterator> parse_number(
+      char_iterator b,
+      char_iterator e)
     {
       if (b != e and between('0', *b, '9'))
       {
         auto sb = b;
 
         while (b != e and between('0', *b, '9'))
-          b++;
+          std::advance(b, 1);
 
         return { std::stod(std::string(sb, b)), b };
       }
@@ -373,121 +378,152 @@ namespace black::clon
       throw expected_character("[0-9]");
     }
 
-    parse_result<boolean> parse_bool(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+    template<typename char_iterator>
+    parse_result<boolean, char_iterator> parse_bool(
+      char_iterator b,
+      char_iterator e)
     {
-      if (b != e and *b == 't' and
-        (b + 1) != e and *(b + 1) == 'r' and
-        (b + 2) != e and *(b + 2) == 'u' and
-        (b + 3) != e and *(b + 3) == 'e')
-        return { true, b + 4 };
-      else if (b != e and *b == 'f' and
-        (b + 1) != e and *(b + 1) == 'a' and
-        (b + 2) != e and *(b + 2) == 'l' and
-        (b + 3) != e and *(b + 3) == 's' and
-        (b + 4) != e and *(b + 4) == 'e')
-        return { false, b + 5 };
+      auto b0 = b;
+      auto b1 = b0 != e ? std::next(b0) : e;
+      auto b2 = b1 != e ? std::next(b1) : e;
+      auto b3 = b2 != e ? std::next(b2) : e;
+      auto b4 = b3 != e ? std::next(b3) : e;
+      auto b5 = b4 != e ? std::next(b4) : e;
+
+      if (b0 != e and *b0 == 't' and
+        b1 != e and *b1 == 'r' and
+        b2 != e and *b2 == 'u' and
+        b3 != e and *b3 == 'e')
+        return { true, b4 };
+      else if (b0 != e and *b0 == 'f' and
+        b1 != e and *b1 == 'a' and
+        b2 != e and *b2 == 'l' and
+        b3 != e and *b3 == 's' and
+        b4 != e and *b4 == 'e')
+        return { false, b5 };
 
       throw expected_character("true|false");
     }
 
-    parse_result<clon> parse_one(
-      std::string::const_iterator b,
-      std::string::const_iterator e);
+    template<typename char_iterator>
+    parse_result<clon, char_iterator> parse_one(
+      char_iterator b,
+      char_iterator e);
 
-    parse_result<object> parse_object(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+    template<typename char_iterator>
+    parse_result<object, char_iterator> parse_object(
+      char_iterator b,
+      char_iterator e)
     {
-      if (b != e and *b == '(')
+      if (b == e or *b != '(')
+        throw expected_character("'('");
+
+      object cls;
+
+      while (b != e and *b == '(')
       {
-        object cls;
-
-        while (b != e and *b == '(')
-        {
-          auto&& res = parse_one(b, e);
-          cls.push_back(res.val);
-          b = res.i;
-          b = parse_blank(b, e);
-        }
-
-        return { cls, b };
+        auto&& res = parse_one(b, e);
+        cls.push_back(res.val);
+        b = res.i;
+        b = parse_blank(b, e);
       }
 
-      throw expected_character("'('");
+      return { cls, b };
     }
 
-    parse_result<clon> parse_one(
-      std::string::const_iterator b,
-      std::string::const_iterator e)
+    template<typename char_iterator>
+    parse_result<clon, char_iterator> parse_one(
+      char_iterator b,
+      char_iterator e)
     {
-      if (b != e and *b == '(')
+      if (b == e or *b != '(')
+        throw expected_character("'('");
+
+      clon c;
+      b = parse_blank(std::next(b), e);
+      c.name = object_name(b, e);
+      std::advance(b, c.name.size());
+      b = parse_blank(b, e);
+
+      switch (next_could_be(b, e))
       {
-        clon c;
-        b = parse_blank(b + 1, e);
-        c.name = object_name(b, e);
-        std::advance(b, c.name.size());
-        b = parse_blank(b, e);
-
-        switch (next_could_be(b, e))
-        {
-        case clon_type::boolean:
-        {
-          auto&& bl = parse_bool(b, e);
-          b = bl.i;
-          c.val = bl.val;
-          break;
-        }
-        case clon_type::number:
-        {
-          auto&& nb = parse_number(b, e);
-          b = nb.i;
-          c.val = nb.val;
-          break;
-        }
-        case clon_type::string:
-        {
-          auto&& st = parse_string(b, e);
-          b = st.i;
-          c.val = st.val;
-          break;
-        }
-        case clon_type::object:
-        {
-          auto&& ob = parse_object(b, e);
-          b = ob.i;
-          c.val = ob.val;
-          break;
-        }
-        case clon_type::none:
-          throw expected_character("(|true|false|'\"'|[0-9]");
-        }
-
-        b = parse_blank(b, e);
-
-        if (b != e and *b == ')')
-          return { std::move(c), b + 1 };
-
-        throw expected_character(")");
+      case clon_type::boolean:
+      {
+        auto&& bl = parse_bool(b, e);
+        b = bl.i;
+        c.val = bl.val;
+        break;
+      }
+      case clon_type::number:
+      {
+        auto&& nb = parse_number(b, e);
+        b = nb.i;
+        c.val = nb.val;
+        break;
+      }
+      case clon_type::string:
+      {
+        auto&& st = parse_string(b, e);
+        b = st.i;
+        c.val = st.val;
+        break;
+      }
+      case clon_type::object:
+      {
+        auto&& ob = parse_object(b, e);
+        b = ob.i;
+        c.val = ob.val;
+        break;
+      }
+      case clon_type::none:
+        throw expected_character("(|true|false|'\"'|[0-9]");
       }
 
-      throw expected_character("(");
+      b = parse_blank(b, e);
+
+      if (b != e and *b == ')')
+        return { std::move(c), std::next(b) };
+
+      throw expected_character(")");
+    }
+
+    template<typename char_iterator>
+    clon parse(
+      char_iterator b,
+      char_iterator e)
+    {
+      auto&& res = detail::parse_one(b, e);
+      b = res.i;
+      b = detail::parse_blank(b, e);
+
+      if (res.i == e)
+        return res.val;
+
+      // TODO error a définir
+      throw std::exception();
     }
   } // namespace detail
 
-  clon parse(
-    std::string::const_iterator b,
-    std::string::const_iterator e)
+
+  clon parse(std::string_view s)
   {
-    auto&& res = detail::parse_one(b, e);
-    b = res.i;
-    b = detail::parse_blank(b, e);
+    return detail::parse(
+      s.begin(), s.end());
+  }
 
-    if (res.i == e)
-      return res.val;
+  template<typename ... args>
+  clon parse_fmt(
+    std::string_view pattern, args&&... as)
+  {
+    return parse(fmt::format(pattern, as...));
+  }
 
-    throw std::exception();
+  clon parse_stream(
+    std::istream& s)
+  {
+    std::istreambuf_iterator<char> in(s);
+    std::istreambuf_iterator<char> eos;
+    return detail::parse(in, eos);
   }
 
   namespace detail
@@ -557,20 +593,22 @@ namespace black::clon
       if (t.b == t.e)
         return std::string_view(b, t.b);
       else
-        return std::string_view(b, t.b - 1);
+        return std::string_view(b, std::prev(t.b));
     }
 
     std::size_t to_size(std::string_view v)
     {
       std::size_t size = v.size();
-      
+
       switch (size)
       {
       case 0: throw std::exception();
       case 1:
         return (v.back() - '0');
       default:
-        return (v.back() - '0') + 10 * to_size({ v.begin(), v.end() - 1 });
+        std::string_view v{ v.begin(), std::prev(v.end()) };
+        std::size_t ten = 10 * to_size(v);
+        return (v.back() - '0') + ten;
       }
     }
 
@@ -711,8 +749,14 @@ namespace black::clon
     const clon_value& value)
   {
     clon& sub = const_cast<clon&>(get(pth, c));
+
+    if (is_none(sub))
+      throw unreachable_path(pth);
+
     sub.val = value;
   }
+
+
 } // namespace black::clon
 
 #endif

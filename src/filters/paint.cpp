@@ -8,31 +8,33 @@
 
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/algorithm/string/split.hpp>
-#include "../utils/json.hpp"
-#include "../utils/json_utils.hpp"
 #include "fmt_to_style.hpp"
 #include <fmt/format.h>
+#include "../utils/clon.hpp"
+#include "../utils/clon_utils.hpp"
 
-namespace json = nlohmann;
+using namespace black;
 
-struct display
-{
-  std::string pattern;
-  std::string path;
-};
 
-struct format
+
+struct input
 {
   std::string path;
   std::string value;
+};
+
+struct output
+{
   fmt::text_style style;
-  std::vector<display> displays;
+  std::string pattern;
+  std::string path;
 };
 
 struct filter
 {
   std::string name;
-  std::vector<format> formats;
+  input in;
+  output out;
 };
 
 struct configuration
@@ -41,34 +43,31 @@ struct configuration
   std::vector<filter> filters;
 };
 
-json::json load_config_json(const std::string &);
-configuration load_config(const json::json &);
-
-fmt::text_style
-to_style(const std::vector<std::string> &styles);
+clon::clon load_config_clon(const std::string&);
+configuration load_config(const clon::clon&);
 
 std::string
-get_config_path(int argc, char **argv);
+get_config_path(int argc, char** argv);
 
 std::string
-get_filter_name(int argc, char **argv);
+get_filter_name(int argc, char** argv);
 
-const filter &
+const filter&
 load_filter(
-    const std::string &name,
-    const std::vector<filter> &filters);
+  const std::string& name,
+  const std::vector<filter>& filters);
 
 void apply_filter(
-    const json::json &j,
-    const filter &f);
+  const clon::clon& c,
+  const filter& f);
 
 class bad_configuration : public std::exception
 {
   std::string msg;
 
 public:
-  explicit bad_configuration(const std::string &_msg) : msg{_msg} {}
-  const char *what() const noexcept
+  explicit bad_configuration(const std::string& _msg) : msg{ _msg } {}
+  const char* what() const noexcept
   {
     return msg.c_str();
   }
@@ -80,83 +79,103 @@ void check_nb_args(int argc, int nb)
     throw std::invalid_argument(fmt::format("{} args expected", nb));
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
+try
 {
-  try
+  check_nb_args(argc, 3);
+  auto path = get_config_path(argc, argv);
+  auto fname = get_filter_name(argc, argv);
+  auto cclon = load_config_clon(path);
+  auto config = load_config(cclon);
+  
+  std::cout << config.filters.size() << std::endl;
+  
+  auto filter = load_filter(fname, config.filters);
+
+  
+  std::string line;
+  clon::clon c;
+
+  while (std::getline(std::cin, line))
   {
-    check_nb_args(argc, 3);
-    auto path = get_config_path(argc, argv);
-    auto fname = get_filter_name(argc, argv);
-    auto json = load_config_json(path);
-    auto config = load_config(json);
-    auto filter = load_filter(fname, config.filters);
-
-    std::string line;
-    json::json j;
-
-    while (std::cin >> j)
-      apply_filter(j, filter);
-
-    return EXIT_SUCCESS;
-  }
-  catch (std::exception &e)
-  {
-    auto &&err = black::json::from_error(e);
-    auto &&style = fmt::fg(fmt::color::red) |
-                   fmt::emphasis::bold;
-    auto &&pattern = "{}\n";
-    std::cout << fmt::format(style, pattern, err.dump());
+    c = clon::parse(line);
+    apply_filter(c, filter);
   }
 
+  return EXIT_SUCCESS;
+}
+catch (std::exception& e)
+{
+  auto&& err = clon::from_error(e);
+  auto&& style =
+    fmt::fg(fmt::color::red) |
+    fmt::emphasis::bold;
+  auto&& pattern = "{}\n";
+  std::cout << fmt::format(style, pattern, clon::to_string(err));
   return EXIT_FAILURE;
 }
 
-json::json load_config_json(const std::string &fname)
+
+clon::clon load_config_clon(
+  const std::string& fname)
 {
-  json::json config;
+  clon::clon config;
 
   if (std::filesystem::exists(fname))
   {
     std::ifstream inp(fname);
-    inp >> config;
+    config = clon::parse_stream(inp);
   }
 
   return config;
 }
 
-configuration load_config(const json::json &j)
+configuration load_config(const clon::clon& c)
 {
   configuration config;
 
-  for (auto &&jflt : j)
-  {
-    filter flt;
-    flt.name = jflt["name"].get<std::string>();
-
-    for (auto &&jfmt : jflt["formats"])
+  if (clon::is_object(c) and c.name == "filters")
+    for (auto&& cfilter : clon::as_object(c))
     {
-      format fmt;
-      fmt.path = jfmt["path"].get<std::string>();
+      filter flt;
 
-      if (jfmt.contains("value"))
-        fmt.value = jfmt["value"].get<std::string>();
+      if (cfilter.name == "filter")
+      {
+        auto&& cname = clon::get("name", cfilter);
+        auto&& inpath = clon::get("input.path", cfilter);
+        auto&& inval = clon::get("input.value", cfilter);
+        auto&& outpath = clon::get("output.path", cfilter);
+        auto&& outpattern = clon::get("output.pattern", cfilter);
 
-      fmt.style = to_style(jfmt["style"].get<std::vector<std::string>>());
+        if (clon::is_string(cname))
+          flt.name = clon::as_string(cname);
 
-      if (jfmt.contains("displays"))
-        for (auto &&jdis : jfmt["displays"])
-        {
-          display dis;
-          dis.pattern = jdis["pattern"].get<std::string>();
-          dis.path = jdis["path"].get<std::string>();
-          fmt.displays.push_back(dis);
-        }
+        if (clon::is_string(inpath))
+          flt.in.path = clon::as_string(inpath);
 
-      flt.formats.push_back(fmt);
+        if (clon::is_string(inval))
+          flt.in.value = clon::as_string(inval);
+
+        if (clon::is_string(outpattern))
+          flt.out.pattern = clon::as_string(outpattern);
+
+        if (clon::is_string(outpath))
+          flt.out.path = clon::as_string(outpath);
+
+        auto&& cout = clon::get("output", cfilter);
+
+        std::vector<std::string> styles;
+
+        if (clon::is_object(cout))
+          for (auto&& sty : clon::as_object(cout))
+            if (sty.name == "style" and clon::is_string(sty))
+              styles.push_back(clon::as_string(sty));
+
+        flt.out.style = to_style(styles);
+      }
+      
+      config.filters.emplace_back(flt);
     }
-
-    config.filters.push_back(flt);
-  }
 
   return config;
 }
@@ -169,8 +188,8 @@ auto is_char(const char c)
 }
 
 std::list<std::string>
-split(const std::string &s,
-      const char c)
+split(const std::string& s,
+  const char c)
 {
   using namespace boost::algorithm;
   using namespace boost;
@@ -180,7 +199,7 @@ split(const std::string &s,
 }
 
 std::string
-get_config_path(int argc, char **argv)
+get_config_path(int argc, char** argv)
 {
   namespace ba = boost::algorithm;
   std::string arg(argv[1]);
@@ -195,13 +214,13 @@ get_config_path(int argc, char **argv)
       path = keyval.back();
     else
     {
-      auto &&e = "--config arg malformed";
+      auto&& e = "--config arg malformed";
       throw std::invalid_argument(e);
     }
   }
   else
   {
-    auto &&e = "--config=<path> is mandatory";
+    auto&& e = "--config=<path> is mandatory";
     throw std::invalid_argument(e);
   }
 
@@ -209,7 +228,7 @@ get_config_path(int argc, char **argv)
 }
 
 std::string
-get_filter_name(int argc, char **argv)
+get_filter_name(int argc, char** argv)
 {
   namespace ba = boost::algorithm;
   std::string arg(argv[2]);
@@ -224,54 +243,55 @@ get_filter_name(int argc, char **argv)
       name = keyval.back();
     else
     {
-      auto &&e = "--filter arg malformed";
+      auto&& e = "--filter arg malformed";
       throw std::invalid_argument(e);
     }
   }
   else
   {
-    auto &&e = "--filter=<path> is mandatory";
+    auto&& e = "--filter=<path> is mandatory";
     throw std::invalid_argument(e);
   }
 
   return name;
 }
 
-const filter &
+const filter&
 load_filter(
-    const std::string &name,
-    const std::vector<filter> &filters)
+  const std::string& name,
+  const std::vector<filter>& filters)
 {
-  for (auto &&flt : filters)
+  for (auto&& flt : filters)
     if (flt.name == name)
       return flt;
 
-  auto &&p = "filter '{}' does not exist";
-  auto &&e = fmt::format(p, name);
+  auto&& p = "filter '{}' does not exist";
+  auto&& e = fmt::format(p, name);
   throw std::invalid_argument(e);
 }
 
 void apply_filter(
-    const json::json &j,
-    const filter &f)
+  const clon::clon& c,
+  const filter& f)
 {
-  using namespace black::json;
-  
-  for (auto &&fmt : f.formats)
-    if (exists(fmt.path, j))
-      if (fmt.value.empty() or
-          get_str(fmt.path, j) == fmt.value)
-      {
-        if (fmt.displays.empty())
-          std::cout << fmt::format(fmt.style, "{}\n", j.dump());
-        else
-          for (auto &&dis : fmt.displays)
-          {
-            std::cout << fmt::format(fmt.style, dis.pattern, get_str(dis.path, j));
-            std::cout << '\n';
-          }
-        return;
-      }
+  auto&& indetect = clon::get(f.in.path, c);
 
-  std::cout << fmt::format("{}\n", j.dump());
+  if (clon::is_string(indetect))
+    if (clon::as_string(indetect) == f.in.value)
+    {
+      std::string pattern = "{}\n";
+      std::string value;
+
+      auto&& cout = clon::get(f.out.path, c);
+
+      if (clon::is_string(cout))
+        value = std::move(clon::as_string(cout));
+      else
+        value = std::move(clon::to_string(cout));
+
+      if (not f.out.pattern.empty())
+        pattern = fmt::format(pattern, f.out.pattern);
+
+      std::cout << fmt::format(f.out.style, pattern, value);
+    }
 }

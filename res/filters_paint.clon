@@ -1,0 +1,11 @@
+(filters
+  (filter 
+    (name "exception")
+    (input 
+      (path "log.type")
+      (value "exception"))
+    (output
+      (style "red")
+      (style "bold")
+      (pattern "- fatal : {}")
+      (path "log.message"))))

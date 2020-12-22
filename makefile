@@ -12,7 +12,7 @@ all:\
 	dist/actions_project \
 	dist/actions_project_init \
 	dist/filters_paint \
-	dist/filters_paint.json
+	dist/filters_paint.clon
 
 dist/blackci: src/blackci.cpp dist
 	${COMPILER} -o dist/blackci${EXT} src/blackci.cpp ${LIBS} ${FLAGS}
@@ -32,8 +32,8 @@ dist/proxies_git: src/proxy/git.cpp dist
 dist/proxies_apt: src/proxy/apt.cpp dist
 	${COMPILER} -o dist/proxies_apt${EXT} src/proxy/apt.cpp ${LIBS} ${FLAGS}
 	
-dist/filters_paint.json: res/filters_paint.json
-	cp res/filters_paint.json dist/filters_paint.json
+dist/filters_paint.clon: res/filters_paint.clon dist
+	cp res/filters_paint.clon dist/filters_paint.clon
 
 dist/clon: src/filters/clon.cpp dist
 	${COMPILER} -o dist/clon${EXT} src/filters/clon.cpp ${LIBS} ${FLAGS}
